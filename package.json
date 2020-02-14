@@ -1,0 +1,11 @@
+{
+  "name": "pointip",
+  "version": "1.0.0",
+  "description": "Points-In-Polygon Service",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "author": "Abdülkadir Çakır",
+  "license": "ISC"
+}

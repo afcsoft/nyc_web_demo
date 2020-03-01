@@ -1,18 +1,221 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Node Bonus</title>      
-        <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.2.0/css/ol.css">
-        <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.2.0/build/ol.js"></script>    
-        <link rel="stylesheet" type="text/css" href="styles.css">  
-    </head>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/momentjs/2.14.1/moment.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.2.0/css/ol.css">
+<script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.2.0/build/ol.js"></script>
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<script>
+$( document ).ready(function() {
+  $("#datetimepicker1").datetimepicker({ 
+      format: 'YYYY-MM-DD HH:mm:ss',
+      date: '2015-12-13 12:00:00',          
+  });
+  $("#datetimepicker2").datetimepicker({ 
+    format: 'YYYY-MM-DD HH:mm:ss',
+    date: '2015-12-13 13:00:00',
+  });
+}); 
+</script>
+<style>
+        html, body {
+        height: 100%;
+        }
+        .map {
+        
+          width: 100%;
+	  display: block;
+	  overflow-x:visible;
+	  overflow-y:visible;
+	  overflow:visible;		
+        }
+
+        #header {
+            text-align: center;
+        }
+      </style>
+  <title>Open Layers testing</title>
+</head>
+<body>
+<header id="headerX">
+<p id="headX">NYC</p>
+    <div id="header">    
+    </div>
+    <p>Zone ID</p>
+    <input id="zone_id"></input>
+    <p>Start Date</p>
+    <div class="container">
+      <div class="row">
+          <div class='col-sm-6'>
+              <div class="form-group">
+                  <div class='input-group date' id='datetimepicker1'>
+                      <input type='text' class="form-control" />
+                      <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                      </span>
+                  </div>
+              </div>
+          </div>
+
+      </div>
+  </div>
+  <script>
+    $(function () {
+      $('#datetimepicker1').datetimepicker();
+   });
+  </script>
+    <p>End Date</p>
+    <div class="container">
+      <div class="row">
+          <div class='col-sm-6'>
+              <div class="form-group">
+                  <div class='input-group date' id='datetimepicker2'>
+                      <input type='text' class="form-control" />
+                      <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                      </span>
+                  </div>
+              </div>
+          </div>
+
+      </div>
+  </div>
+  <script>
+    $(function () {
+      $('#datetimepicker2').datetimepicker();
+   });
+  </script>
+    <button onclick="on_query()">Query</button>
+</header>
+<div id="map" class="map"></div>
+<script type="text/javascript">
+
+
+    var baseMapLayer = new ol.layer.Tile({
+        source: new ol.source.OSM()
+    });
+    var layer = new ol.layer.Tile({
+      source: new ol.source.OSM()
+    });
+    var center = ol.proj.fromLonLat([-74.184381, 40.6958779999999]);
+    var view = new ol.View({
+      center: center,
+      zoom: 10
+    });
+    var map = new ol.Map({
+        target: 'map',
+        view: view,
+        layers: [layer]
+    });
+
+
+
     
-    <body>
+    var vectorSource = new ol.source.Vector({
+            url:"/api/data",
+            format: new ol.format.GeoJSON({ featureProjection: "EPSG:4326" })  
+    });
 
-<div id="map" class="mapx">
+    var markerVectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+        style:new ol.style.Style ({
+          fill: new ol.style.Fill({
+             color: 'rgba(255,100,50,0.5)'
+           }),
+          stroke: new ol.style.Stroke({
+              color: '#3399CC',
+                width: 1.25
+           }) 
+        })          
+    });
 
-</div>
-    <script src="polyview.js"></script>
-    </body>
+    map.addLayer(markerVectorLayer);
+    var select = new ol.interaction.Select();
+
+map.addInteraction(select);
+    //Set custom marker    
+    map.on("click",handleMapClick);
+    
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    var h = document.getElementById('headerX').clientHeight;    
+    document.getElementById("map").style.height = (vh-h).toString()+'px';
+    map.updateSize();
+	
+
+    function on_query(evt){
+      var xhr = new XMLHttpRequest();
+      xhr.timeout=1000000000000;
+      xhr.open("POST","/query", true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify({
+        id:document.getElementById("zone_id").value,
+        s_date:$('#datetimepicker1').data('DateTimePicker').date()._i,
+        e_date:$('#datetimepicker2').data('DateTimePicker').date()._i
+      }));
+      xhr.onreadystatechange = function () {
+      if (this.readyState === 4) {
+        if ((this.status == 200) && (this.status < 300)) {
+          var blob = new Blob([this.response], {type: 'text/csv'});
+          let a = document.createElement("a");
+          a.style = "display: none";
+          document.body.appendChild(a);
+          let url = window.URL.createObjectURL(blob);
+          a.href = url;
+          a.download = 'result_from_'+document.getElementById("zone_id").value+'_'+document.getElementById("header").innerText+'.csv';
+          //programatically click the link to trigger the download
+          a.click();
+          //release the reference to the file by revoking the Object URL
+          window.URL.revokeObjectURL(url);
+          console.log(this.responseText)
+        }
+      }
+     
+    }
+  }
+
+    function handleMapClick(evt){
+          const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    var h = document.getElementById('headerX').clientHeight;    
+    document.getElementById("map").style.height = (vh-h).toString()+'px';
+    
+        var feature = map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+            return feature;
+        });
+        feature.style=new ol.style.Style ({
+          fill: new ol.style.Fill({
+             color: 'rgba(255,100,255,0.5)'
+           }),
+          stroke: new ol.style.Stroke({
+              color: '#3399CC',
+                width: 1.25
+           }) });
+
+        
+        if (feature) {
+          var features = select.getFeatures();
+        features.push(feature);
+
+            var att = feature.getProperties();
+            console.log(att);
+            document.getElementById("headX").innerText=att.zone;
+            document.getElementById("zone_id").value=att.id;
+            
+            
+        }
+
+        map.updateSize();
+    }
+
+
+  </script>
+</body>
 </html>

@@ -40,7 +40,7 @@ $( document ).ready(function() {
   <title>Open Layers testing</title>
 </head>
 <body>
-<header>
+<header id="headerX">
     <div id="header">    
     </div>
     <p>Zone ID</p>
@@ -102,7 +102,7 @@ $( document ).ready(function() {
     var center = ol.proj.fromLonLat([-74.184381, 40.6958779999999]);
     var view = new ol.View({
       center: center,
-      zoom: 6
+      zoom: 12
     });
     var map = new ol.Map({
         target: 'map',
@@ -138,6 +138,7 @@ $( document ).ready(function() {
     
     function on_query(evt){
       var xhr = new XMLHttpRequest();
+      xhr.timeout=1000000000000;
       xhr.open("POST","/query", true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.send(JSON.stringify({
